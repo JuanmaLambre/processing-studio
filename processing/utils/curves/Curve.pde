@@ -5,6 +5,8 @@ abstract class Curve {
 
   abstract PVector getTangent(float u); 
   
+  abstract float length();
+  
   void draw(int segments) {
     beginShape();  //<>//
     for (int i = 0; i <= segments; i++) {

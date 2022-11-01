@@ -27,6 +27,10 @@ class Line extends Curve {
     return result;
   }
   
+  float length() {
+    return this.end.dist(this.start);
+  }
+  
   void draw(int segments) {
     this.draw();
   }

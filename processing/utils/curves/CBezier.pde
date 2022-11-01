@@ -1,41 +1,28 @@
 /** Cuadratic Bezier */
 class CBezier extends Curve {
-  private ArrayList<PVector> points;
+  private PVector[] points;
+  private float length;
   
-  CBezier() {
-    this.points = new ArrayList(4); 
+  CBezier(PVector p0, PVector c0, PVector c1, PVector p1) {
+    this.points = new PVector[] { p0.copy(), c0.copy(), c1.copy(), p1.copy() };
+    this.length = this.calculateLength();
   }
   
-  void addFirstPoint(float x, float y) {
-    if (this.points.size() == 0) this.addPoint(x, y);
-  }
-  
-  void addPoint(float x, float y) {
-     points.add(new PVector(x, y));
-  }
-  
-  void addPoint(PVector p) {
-     points.add(p.copy());
+  float length() {
+    return this.length;
   }
   
   PVector getPoint(float u) {
-    int sections = (int) Math.floor((points.size() - 1) / 3f);
-    float sectionLength = 1f / sections;
-    int sectionNo = (int) Math.floor(u / sectionLength);
-    if (u == 1) sectionNo--;
-    float sectionU = (u % sectionLength) / sectionLength;
-    if (u == 1) sectionU = sectionLength;
-    int firstPointIdx = sectionNo == 0 ? 0 : sectionNo * 3 + 1;
+    PVector p0 = this.points[0];
+    PVector p1 = this.points[1];
+    PVector p2 = this.points[2];
+    PVector p3 = this.points[3];
     
-    PVector p0 = this.points.get(firstPointIdx);
-    PVector p1 = this.points.get(firstPointIdx + 1);
-    PVector p2 = this.points.get(firstPointIdx + 2);
-    PVector p3 = this.points.get(firstPointIdx + 3);
+    PVector result = p0.copy().mult(pow(1 - u, 3));
+    result.add(p1.copy().mult(3 * u * pow(1 - u, 2)));
+    result.add(p2.copy().mult(3 * pow(u, 2) * (1 - u)));
+    result.add(p3.copy().mult(pow(u, 3)));
     
-    PVector result = p0.copy().mult(pow(1 - sectionU, 3));
-    result.add(p1.copy().mult(3 * sectionU * pow(1 - sectionU, 2)));
-    result.add(p2.copy().mult(3 * pow(sectionU, 2) * (1 - sectionU)));
-    result.add(p3.copy().mult(pow(sectionU, 3)));
     return result;
   }
 
@@ -60,5 +47,19 @@ class CBezier extends Curve {
       str += String.format(" (%f; %f)", point.x, point.y);
     }
     return str;
+  }
+  
+  private float calculateLength() {
+    int steps = 256;
+    PVector prev = this.getPoint(1f / steps);
+    float length = 0;
+    
+    for (int i = 1; i <= steps; i++) {
+      PVector cur = this.getPoint(1f * i/steps);
+      length += cur.dist(prev);
+      prev.set(cur);
+    }
+    
+    return length;
   }
 }

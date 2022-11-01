@@ -32,4 +32,8 @@ class Arc extends Curve {
     tangent.rotate(HALF_PI);
     return tangent;
   }
+  
+  float length() {
+    return (this.endAngle - this.startAngle) * this.radius; 
+  }
 }

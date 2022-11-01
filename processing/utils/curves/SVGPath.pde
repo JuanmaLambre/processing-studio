@@ -1,14 +1,13 @@
-class SVGPath {
-  private ArrayList<Curve> curves;
+class SVGPath extends CompoundCurve {
   private float[] viewbox;
   
   SVGPath(float minx, float miny, float x, float y) {
-    this.curves = new ArrayList();
+    super();
     this.viewbox = new float[] { minx, miny, x, y };
   }
   
-  void draw(int segmentsPerCurve) {
-    for(Curve curve : curves) curve.draw(segmentsPerCurve); 
+  void draw(int segments) {
+    for(Curve curve : curves) curve.draw(segments / curves.size()); 
   }
   
   void build(String definition) {
@@ -39,23 +38,33 @@ class SVGPath {
            else cursor.set(xy[0], xy[1]);
            PVector end = cursor.copy();
            Line line = new Line(start, end);
-           this.curves.add(line);
+           this.addCurve(line);
            break;
          
          case "c":
          case "C":
-           CBezier curve = new CBezier(); //<>//
-           curve.addPoint(cursor);
+           PVector[] points = new PVector[4];
+           points[0] = cursor.copy();
+           int pointsCount = 1; //<>//
            
            while (dataIdx < data.length && !data[dataIdx].matches("[a-zA-Z]")) {
              xy = this.getXY(data, dataIdx);
              dataIdx += 2;
+             
              if (command.equals("c")) cursor.add(xy[0], xy[1]);
              else cursor.set(xy[0], xy[1]);
-             curve.addPoint(cursor);
+             
+             points[pointsCount++] = cursor.copy();
+             if (pointsCount == 4) {
+               CBezier bezier = new CBezier(points[0], points[1], points[2], points[3]);
+               this.addCurve(bezier);
+               pointsCount = 0;
+             }
            }
            
-           this.curves.add(curve);
+           if (pointsCount > 0) 
+             println(String.format("%d points have been left out from cubic Bezier definition", pointsCount));
+           
            break;
       }
     }
