@@ -1,3 +1,8 @@
+/** The CameraController handles zooming and translating the camera with the mouse.
+ * The controller will respect every listener defined outside by the user.
+ *
+ * The only use requirements are to call `setup` and `update` methods
+ */
 const CameraController = {
   /* Private variables */
   translation: new p5.Vector(),
@@ -10,9 +15,35 @@ const CameraController = {
     avoidReflection: true,
   },
 
-  autoSetup() {
-    if (!window.mouseDragged) window.mouseDragged = this.onMouseDragged.bind(this);
-    if (!window.mouseWheel) window.mouseWheel = this.onScroll.bind(this);
+  setup() {
+    // Add listeners here
+    const listeners = {
+      mouseDragged: this.onMouseDragged.bind(this),
+      mouseWheel: this.onScroll.bind(this),
+    };
+
+    // Automatic assignment logic. This should not be modified
+    Object.entries(listeners).forEach(([listenerName, ctrlListener]) => {
+      if (!window[listenerName]) {
+        // Assign and call the CameraController listener
+        window[listenerName] = ctrlListener;
+      } else {
+        // There is already something defined, so we will respect that, but later call our callback
+        const prevListener = window[listenerName];
+        window[listenerName] = (event) => {
+          // Call previously defined listener, and save the result
+          const defaultResult = prevListener.bind(window)(event);
+
+          // Call our callback
+          const result = ctrlListener(event);
+
+          // If our callback (called later) returned something, we prioritize that
+          if (result != undefined) return result;
+          // Else, we return the previous listener result
+          else return defaultResult;
+        };
+      }
+    });
   },
 
   update() {
@@ -24,7 +55,7 @@ const CameraController = {
     translate(this.translation);
   },
 
-  onMouseDragged() {
+  onMouseDragged(event) {
     const dir = new p5.Vector(mouseX - pmouseX, mouseY - pmouseY);
     dir.mult(this.settings.dragSensitivity / this.scaling.mag());
     if (this.settings.cartesian) dir.y *= -1;
